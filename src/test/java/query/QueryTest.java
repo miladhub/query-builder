@@ -72,8 +72,7 @@ public class QueryTest
                 select(
                         from(foo,
                                 where(
-                                        pred(attr(foo_str), like(), value(
-                                                "Foo%")),
+                                        pred(attr(foo_str), like(), value("Foo%")),
                                         pred(attr(foo_int), lt(), value(102))
                                 )),
                         attr(foo_str), attr(foo_int));

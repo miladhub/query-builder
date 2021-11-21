@@ -1,5 +1,8 @@
 package query;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -150,12 +153,12 @@ public class Factory
         return asList(predicates);
     }
 
-    public static <T, U> Pair<T, U> pair(
+    public static <T, U> Tuple2<T, U> pair(
             T left,
             U right
     )
     {
-        return new Pair<>(left, right);
+        return Tuple.of(left, right);
     }
 
     public static Op eq()
