@@ -1,6 +1,5 @@
 package query;
 
-import io.vavr.Tuple;
 import io.vavr.collection.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,9 +124,4 @@ public class QueryTest
     {
         return repo.select(query.build()).get();
     }
-//
-//    private List<List<Entity>> fetch(SelectBuilder query)
-//    {
-//        return repo.select(query.build()).get();
-//    }
 }
