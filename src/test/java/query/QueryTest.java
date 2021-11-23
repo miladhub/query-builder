@@ -1,14 +1,17 @@
 package query;
 
+import io.vavr.Tuple;
+import io.vavr.collection.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
+import java.sql.SQLException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static query.AttrType.*;
-import static query.Factory.*;
+import static query.Entities.*;
+import static query.Queries.*;
 
 public class QueryTest
 {
@@ -16,7 +19,7 @@ public class QueryTest
 
     private final Attr foo_str = attr(Str, "foo_str");
     private final Attr foo_int = attr(Int, "foo_int");
-    private final EntityType foo = Factory.newEntityType(
+    private final EntityType foo = Entities.newEntityType(
             "foo", foo_str, foo_int);
     private final Entity foo_1 = newEntity(foo, "foo_1", strValue(foo_str,
             "foo_str_1"), intValue(foo_int, 42));
@@ -25,159 +28,106 @@ public class QueryTest
 
     private final Attr bar_int = attr(Int, "bar_int");
     private final Attr bar_str = attr(Str, "bar_str");
-    private final EntityType bar = Factory.newEntityType(
+    private final EntityType bar = Entities.newEntityType(
             "bar", bar_int, bar_str);
     private final Entity bar_1 = newEntity(bar, "bar_1", strValue(bar_str,
-            "str_2"), intValue(bar_int, 44));
+            "bar_str_2"), intValue(bar_int, 44));
     private final Entity bar_2 = newEntity(bar, "bar_2", strValue(bar_str,
-            "str_3"), intValue(bar_int, 42));
+            "bar_str_3"), intValue(bar_int, 42));
 
     @Before
     public void setUp()
-    throws
-            Exception
+    throws SQLException
     {
         repo.init(foo, bar);
         repo.addEntities(foo_1, foo_2, bar_1, bar_2);
     }
 
     @Test
-    public void all_from_et1()
+    public void select_str_from_foo()
     {
+        SelectBuilder query =
+                select(attr(foo_str))
+                        .from(type(foo));
         assertThat(
-                fetch(from(foo)),
-                contains(foo_1, foo_2));
-    }
-
-    @Test
-    public void select_from_et1_str()
-    {
-        assertThat(
-                fetch(select(from(foo), attr(foo_str))),
+                fetch(query),
                 contains(contains("foo_str_1"), contains("foo_str_2")));
     }
 
     @Test
-    public void select_from_et1_str_int()
+    public void select_int_from_foo()
     {
         assertThat(
-                fetch(select(from(foo), attr(foo_str), attr(foo_int))),
+                fetch(select(attr(foo_str), attr(foo_int)).from(foo)),
                 contains(contains("foo_str_1", 42), contains("foo_str_2", 43)));
     }
 
     @Test
-    public void select_from_et1_where()
+    public void select_from_foo_where()
     {
-        SelectQuery select =
-                select(
-                        from(foo,
-                                where(
-                                        pred(attr(foo_str), like(), value("Foo%")),
-                                        pred(attr(foo_int), lt(), value(102))
-                                )),
-                        attr(foo_str), attr(foo_int));
-
-        assertThat(
-                fetch(select),
-                contains("foo_str_1", "foo_str_2"));
-    }
-
-    @Test
-    public void select_from_et1_where_or()
-    {
-        SelectQuery query =
-                select(
-                        from(foo,
-                                where(
-                                        or(
-                                                pred(attr(foo_str), like(),
-                                                        value("Foo%")),
-                                                pred(attr(foo_int), lt(),
-                                                        nullVal()))
-                                )),
-                        attr(foo_str));
+        SelectBuilder query =
+                select(attr(foo_str), attr(foo_int))
+                        .from(foo)
+                        .where(attr(foo_str), like(), value("foo_str_%"))
+                        .and(attr(foo_int), lt(), value(43));
 
         assertThat(
                 fetch(query),
-                contains("foo_str_1", "foo_str_2"));
+                contains(contains("foo_str_1", 42)));
     }
 
     @Test
-    public void all_from_et1_join_et2_on_str()
+    public void select_from_foo_where_or()
     {
+        SelectBuilder query =
+                select(attr(foo_str))
+                        .from(foo)
+                        .where(
+                                pred(attr(foo_str), like(), value("bar%"))
+                                        .or(
+                                                pred(attr(foo_int), eq(), nullVal()).not()));
+
         assertThat(
-                fetch(
-                        join(
-                                from(foo),
-                                from(bar),
-                                on(
-                                        pred(attr(foo_str), eq(),
-                                                attr(bar_str))))),
-                contains(pair(foo_2, bar_1)));
+                fetch(query),
+                contains(contains("foo_str_1"), contains("foo_str_2")));
     }
 
     @Test
-    public void all_from_et1_join_et2_on_int()
+    public void select_from_foo_join_bar_on_int()
     {
+        SelectBuilder query =
+                select(attr(foo_str), attr(bar_str))
+                        .from(foo)
+                        .join(JoinBuilder.type(bar)
+                                .on(pred(attr(foo_int), eq(), attr(bar_int))));
+
         assertThat(
-                fetch(
-                        join(
-                                from(foo),
-                                from(bar),
-                                where(
-                                        pred(attr(foo_int), eq(),
-                                                attr(bar_int))))),
-                contains(pair(foo_1, bar_2)));
+                fetch(query),
+                contains(contains("foo_str_1", "bar_str_3")));
     }
 
     @Test
-    public void all_from_et1_join_et2_on_where()
+    public void select_from_foo_join_bar_where()
     {
-        assertThat(
-                fetch(
-                        join(
-                                from(foo),
-                                from(bar),
-                                on(
-                                        pred(attr(foo_int), eq(),
-                                                attr(bar_int))),
-                                where(
-                                        pred(attr(foo_str), gt(), value(42))))),
-                contains(pair(foo_1, bar_2)));
-    }
-
-    @Test
-    public void select_from_et1_join_et2()
-    {
-        assertThat(
-                fetch(
-                        select(
-                                join(
-                                        from(foo), from(bar), where(
-                                                pred(attr(foo_str), eq(),
-                                                        attr(bar_str)))),
-                                attr(foo_str), attr(bar_int))),
-                contains(pair("str_1", 42)));
-    }
-
-    @Test
-    public void select_from_et1_join_et2_where()
-    {
+        SelectBuilder query =
+                select(attr(foo_str), attr(bar_str))
+                        .from(foo)
+                        .where(attr(foo_int), lt(), value(43))
+                        .join(JoinBuilder.type(bar)
+                                .on(pred(attr(foo_int), eq(), attr(bar_int))));
 
         assertThat(
-                fetch(select(
-                        join(from(foo), from(bar), on(pred(attr(foo_str), eq(), attr(bar_str)))),
-                        attr(foo_str), attr(bar_int))),
-                contains(pair("str_1", 42)));
+                fetch(query),
+                contains(contains("foo_str_1", "bar_str_3")));
     }
 
-    private List<Entity> fetch(Query query)
+    private List<List<Object>> fetch(SelectBuilder query)
     {
-        return repo.fetch(query).get();
+        return repo.select(query.build()).get();
     }
-
-    private List<List<Object>> fetch(SelectQuery query)
-    {
-        return repo.fetch(query).get();
-    }
+//
+//    private List<List<Entity>> fetch(SelectBuilder query)
+//    {
+//        return repo.select(query.build()).get();
+//    }
 }

@@ -1,6 +1,6 @@
 package query;
 
-import java.util.List;
+import io.vavr.collection.List;
 
 public record Entity(
         EntityType type,

@@ -1,5 +1,5 @@
 package query;
 
-import java.util.List;
+import io.vavr.collection.List;
 
 public record EntityType(String name, List<Attr> attrs) {}

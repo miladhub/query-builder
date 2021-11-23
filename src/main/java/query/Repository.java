@@ -1,10 +1,9 @@
 package query;
 
+import io.vavr.collection.List;
 import io.vavr.control.Try;
 
-import java.util.List;
-
 public interface Repository {
-    Try<List<Entity>> fetch(Query q);
-    Try<List<List<Object>>> fetch(SelectQuery s);
+    Try<List<List<Entity>>> select(Query q);
+    Try<List<List<Object>>> select(Select s);
 }

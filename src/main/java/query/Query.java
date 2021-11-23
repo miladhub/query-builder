@@ -1,7 +1,13 @@
 package query;
 
-import java.util.List;
+import io.vavr.collection.List;
 
-public sealed interface Query {}
-record From(EntityType from, List<Predicate> where) implements Query {}
-record Join(Query left, Query right, List<Predicate> on, List<Predicate> where) implements Query {}
+public record Query(
+        From from,
+        List<Predicate> where,
+        List<Join> joins,
+        List<Term> groupBy,
+        List<Predicate> having,
+        List<OrderBy> orderBy
+)
+{}
