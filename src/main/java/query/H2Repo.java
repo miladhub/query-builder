@@ -8,7 +8,9 @@ import java.util.ArrayList;
 
 import static java.util.stream.Collectors.joining;
 
-public class H2Repo implements Repository {
+public class H2Repo
+        implements Repository
+{
     @Override
     public Try<List<List<Entity>>> select(Query q) {
         return Try.of(() -> queryEntities(q));
@@ -31,14 +33,14 @@ public class H2Repo implements Repository {
             List<Term> select
     ) {
         return select.map(t ->
-                                  switch (t) {
-                                      case AttrTerm at -> es.flatMap(Entity::attrs)
-                                              .filter(a -> a.attr().equals(at.attr()))
-                                              .map(this::attrValue)
-                                              .get();
-                                      case Value v -> v.value();
-                                      case Null ignored -> null;
-                                  });
+                switch (t) {
+                    case AttrTerm at -> es.flatMap(Entity::attrs)
+                            .filter(a -> a.attr().equals(at.attr()))
+                            .map(this::attrValue)
+                            .get();
+                    case Value v -> v.value();
+                    case Null ignored -> null;
+                });
     }
 
     private Object attrValue(AttrValue av) {
@@ -78,14 +80,13 @@ public class H2Repo implements Repository {
         String where = toSqlWhere(q.where());
 
         return select + "\n" +
-               from + "\n" +
-               joins + "\n" +
-               where;
+                from + "\n" +
+                joins + "\n" +
+                where;
     }
 
     private String toSqlSelect(Query query) {
-        return
-                "select " +
+        return "select " +
                 query.from().et().name() + ".id, " +
                 query.from().et().attrs()
                         .map(attr -> query.from().et().name() + "." + attr.name())
@@ -102,16 +103,16 @@ public class H2Repo implements Repository {
 
     private String toSqlFrom(From from) {
         return "from " + from.et().name() +
-               " as " +
-               from.et().name().toLowerCase();
+                " as " +
+                from.et().name().toLowerCase();
     }
 
     private String toSqlJoins(List<Join> joins) {
         return joins
                 .map(j -> "join " + j.from().et().name() + " " +
-                          "on " + j.on()
-                                  .map(this::toSql)
-                                  .collect(joining(" and ")))
+                        "on " + j.on()
+                        .map(this::toSql)
+                        .collect(joining(" and ")))
                 .collect(joining("\n"));
     }
 
@@ -123,7 +124,10 @@ public class H2Repo implements Repository {
                 .collect(joining(" and ")));
     }
 
-    private Entity readEntity(EntityType et, ResultSet rs)
+    private Entity readEntity(
+            EntityType et,
+            ResultSet rs
+    )
     throws SQLException {
         String id = rs.getString(et.name() + ".id");
 
@@ -143,7 +147,8 @@ public class H2Repo implements Repository {
         return new Entity(et, id, List.ofAll(avs));
     }
 
-    public void init(EntityType... types) throws SQLException {
+    public void init(EntityType... types)
+    throws SQLException {
         for (EntityType type : types) {
             try (
                     Connection c = createConnection();
@@ -156,7 +161,7 @@ public class H2Repo implements Repository {
                                 .collect(joining(", "));
 
                 String ddl = "create table " + type.name() +
-                             " (" + columnsDdl + ")";
+                        " (" + columnsDdl + ")";
                 s.execute(ddl);
             }
         }
@@ -174,12 +179,12 @@ public class H2Repo implements Repository {
             case BinOp binOp -> {
                 if (binOp.right().equals(new Null()))
                     yield toSql(binOp.left()) +
-                          " is " +
-                          toSql(binOp.right());
+                            " is " +
+                            toSql(binOp.right());
                 else
                     yield toSql(binOp.left()) +
-                          " " + toSql(binOp.op()) + " " +
-                          toSql(binOp.right());
+                            " " + toSql(binOp.op()) + " " +
+                            toSql(binOp.right());
             }
             case And and -> "( " + toSql(and.left()) + " ) and ( " + toSql(and.right()) + " )";
             case Or or -> "( " + toSql(or.left()) + " ) or ( " + toSql(or.right()) + " )";
@@ -204,7 +209,8 @@ public class H2Repo implements Repository {
         };
     }
 
-    public void addEntities(Entity... es) throws SQLException {
+    public void addEntities(Entity... es)
+    throws SQLException {
         try (Connection c = createConnection()) {
             for (Entity e : es) {
                 String dml = List.of("id")
@@ -215,8 +221,8 @@ public class H2Repo implements Repository {
                 try (
                         PreparedStatement insert = c.prepareStatement(
                                 "insert into " + e.type().name() +
-                                " (" + dml + ") values (" +
-                                "?" + ", ?" .repeat(e.attrs().size()) + ")")
+                                        " (" + dml + ") values (" +
+                                        "?" + ", ?".repeat(e.attrs().size()) + ")")
                 ) {
                     insert.setString(++idx, e.id());
                     for (AttrValue a : e.attrs()) {
