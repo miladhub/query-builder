@@ -54,9 +54,9 @@ public class H2Repo implements Repository {
 
         try (
                 Connection c = createConnection();
-                PreparedStatement selectStatement = c.prepareStatement(sql)
+                PreparedStatement select = c.prepareStatement(sql)
         ) {
-            ResultSet rs = selectStatement.executeQuery();
+            ResultSet rs = select.executeQuery();
             java.util.List<java.util.List<Entity>> rows = new ArrayList<>();
 
             while (rs.next()) {
