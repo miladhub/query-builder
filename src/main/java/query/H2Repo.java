@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import static java.util.stream.Collectors.joining;
 
 public class H2Repo
-        implements Repository
-{
+        implements Repository {
     @Override
     public Try<List<List<Object>>> select(Query q) {
         return Try.of(() -> query(q));
@@ -48,7 +47,9 @@ public class H2Repo
         }
     }
 
-    private Object readAttr(int i, Attr attr, ResultSet rs) throws SQLException {
+    private Object readAttr(
+            int i, Attr attr, ResultSet rs
+    ) throws SQLException {
         return switch (attr.type()) {
             case Str -> rs.getString(i);
             case Int -> rs.getInt(i);
@@ -79,16 +80,16 @@ public class H2Repo
 
     private String toSqlFrom(From from) {
         return "from " + from.et().name() +
-                " as " +
-                from.et().name().toLowerCase();
+               " as " +
+               from.et().name().toLowerCase();
     }
 
     private String toSqlJoins(List<Join> joins) {
         return joins
                 .map(j -> "join " + j.from().et().name() + " " +
-                        "on " + j.on()
-                        .map(this::toSql)
-                        .collect(joining(" and ")))
+                          "on " + j.on()
+                                  .map(this::toSql)
+                                  .collect(joining(" and ")))
                 .collect(joining("\n"));
     }
 
@@ -132,7 +133,7 @@ public class H2Repo
                                 .collect(joining(", "));
 
                 String ddl = "create table " + type.name() +
-                        " (" + columnsDdl + ")";
+                             " (" + columnsDdl + ")";
                 s.execute(ddl);
             }
         }
@@ -150,12 +151,12 @@ public class H2Repo
             case BinOp binOp -> {
                 if (binOp.right().equals(new Null()))
                     yield toSql(binOp.left()) +
-                            " is " +
-                            toSql(binOp.right());
+                          " is " +
+                          toSql(binOp.right());
                 else
                     yield toSql(binOp.left()) +
-                            " " + toSql(binOp.op()) + " " +
-                            toSql(binOp.right());
+                          " " + toSql(binOp.op()) + " " +
+                          toSql(binOp.right());
             }
             case And and -> "( " + toSql(and.left()) + " ) and ( " + toSql(and.right()) + " )";
             case Or or -> "( " + toSql(or.left()) + " ) or ( " + toSql(or.right()) + " )";
@@ -193,8 +194,8 @@ public class H2Repo
                 try (
                         PreparedStatement insert = c.prepareStatement(
                                 "insert into " + e.type().name() +
-                                        " (" + dml + ") values (" +
-                                        "?" + ", ?".repeat(e.attrs().size()) + ")")
+                                " (" + dml + ") values (" +
+                                "?" + ", ?" .repeat(e.attrs().size()) + ")")
                 ) {
                     insert.setString(++idx, e.id());
                     for (AttrValue a : e.attrs()) {
