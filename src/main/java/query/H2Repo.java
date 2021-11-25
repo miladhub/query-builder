@@ -78,11 +78,13 @@ public class H2Repo
         String from = toSqlFrom(q.from());
         String joins = toSqlJoins(q.joins());
         String where = toSqlWhere(q.where());
+        String orderBy = toSqlOrderBy(q.orderBy());
 
         return select + "\n" +
-                from + "\n" +
-                joins + "\n" +
-                where;
+               from + "\n" +
+               joins + "\n" +
+               where + "\n" +
+               orderBy;
     }
 
     private String toSqlSelect(Query query) {
@@ -124,10 +126,18 @@ public class H2Repo
                 .collect(joining(" and ")));
     }
 
-    private Entity readEntity(
-            EntityType et,
-            ResultSet rs
-    )
+    private String toSqlOrderBy(List<OrderBy> orderBy) {
+        return orderBy.isEmpty()
+                ? ""
+                : "order by " + orderBy.map(this::toSql)
+                .collect(joining(", "));
+    }
+
+    private String toSql(OrderBy orderBy) {
+        return toSql(orderBy.t()) + " " + orderBy.mode().name().toLowerCase();
+    }
+
+    private Entity readEntity(EntityType et, ResultSet rs)
     throws SQLException {
         String id = rs.getString(et.name() + ".id");
 

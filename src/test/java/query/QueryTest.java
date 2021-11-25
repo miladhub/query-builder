@@ -10,6 +10,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static query.AttrType.*;
 import static query.Entities.*;
+import static query.OrderByMode.*;
 import static query.Queries.*;
 
 public class QueryTest
@@ -62,6 +63,16 @@ public class QueryTest
     }
 
     @Test
+    public void select_int_from_foo_order_by()
+    {
+        assertThat(
+                fetch(select(attr(foo_str), attr(foo_int))
+                              .from(foo)
+                              .order(by(attr(foo_int), DESC))),
+                contains(contains("foo_str_2", 43), contains("foo_str_1", 42)));
+    }
+
+    @Test
     public void select_from_foo_where()
     {
         SelectBuilder query =
@@ -84,6 +95,7 @@ public class QueryTest
                         .where(
                                 pred(attr(foo_str), like(), value("bar%"))
                                         .or(
+                                                //TODO improve readability
                                                 pred(attr(foo_int), eq(), nullVal()).not()));
 
         assertThat(

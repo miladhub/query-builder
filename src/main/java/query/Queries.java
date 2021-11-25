@@ -46,4 +46,8 @@ public class Queries
     {
         return new Null();
     }
+
+    public static OrderBy by(Term t, OrderByMode mode) {
+        return new OrderBy(t, mode);
+    }
 }

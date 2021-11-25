@@ -71,7 +71,7 @@ public class SelectBuilder
         return this;
     }
 
-    public SelectBuilder orderBy(OrderBy... orderBy)
+    public SelectBuilder order(OrderBy... orderBy)
     {
         this.orderBy = List.of(orderBy);
         return this;
