@@ -48,7 +48,7 @@ public class QueryTest
     @Test
     public void select_str_from_foo()
     {
-        SelectBuilder query =
+        QueryBuilder query =
                 select(attr(foo_str))
                         .from(type(foo));
         assertThat(
@@ -91,7 +91,7 @@ public class QueryTest
     @Test
     public void select_from_foo_where()
     {
-        SelectBuilder query =
+        QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
                         .where(attr(foo_str), like(), value("foo_str_%"))
@@ -105,7 +105,7 @@ public class QueryTest
     @Test
     public void select_from_foo_where_or()
     {
-        SelectBuilder query =
+        QueryBuilder query =
                 select(attr(foo_str))
                         .from(foo)
                         .where(
@@ -122,7 +122,7 @@ public class QueryTest
     @Test
     public void select_from_foo_join_bar_on_int()
     {
-        SelectBuilder query =
+        QueryBuilder query =
                 select(attr(foo_str), attr(bar_str))
                         .from(foo)
                         .join(JoinBuilder.type(bar)
@@ -136,7 +136,7 @@ public class QueryTest
     @Test
     public void select_from_foo_join_bar_where()
     {
-        SelectBuilder query =
+        QueryBuilder query =
                 select(attr(foo_str), attr(bar_str))
                         .from(foo)
                         .where(attr(foo_int), lt(), value(43))
@@ -148,7 +148,7 @@ public class QueryTest
                 contains(contains("foo_str_1", "bar_str_3")));
     }
 
-    private List<List<Object>> fetch(SelectBuilder query)
+    private List<List<Object>> fetch(QueryBuilder query)
     {
         return repo.select(query.build()).get();
     }

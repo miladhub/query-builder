@@ -5,8 +5,8 @@ import io.vavr.collection.List;
 
 public class Queries
 {
-    public static SelectBuilder select(Term... terms) {
-        return new SelectBuilder(List.of(terms));
+    public static QueryBuilder select(Term... terms) {
+        return new QueryBuilder(List.of(terms));
     }
 
     public static From type(EntityType et) {

@@ -3,6 +3,7 @@ package query;
 import io.vavr.collection.List;
 
 public record Query(
+        List<Term> select,
         From from,
         List<Predicate> where,
         List<Join> joins,

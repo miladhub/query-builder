@@ -12,12 +12,12 @@ public class H2Repo
         implements Repository
 {
     @Override
-    public Try<List<List<Object>>> select(Select s) {
-        return Try.of(() -> query(s));
+    public Try<List<List<Object>>> select(Query q) {
+        return Try.of(() -> query(q));
     }
 
-    private List<List<Object>> query(Select s) throws SQLException {
-        String sql = toSqlQuery(s);
+    private List<List<Object>> query(Query q) throws SQLException {
+        String sql = toSqlQuery(q);
 
         try (
                 Connection c = createConnection();
@@ -30,7 +30,7 @@ public class H2Repo
                 java.util.List<Object> row = new ArrayList<>();
 
                 int i = 1;
-                for (Term term : s.select()) {
+                for (Term term : q.select()) {
                     Object value = switch (term) {
                         case Value v -> v;
                         case Null ignored -> null;
@@ -55,13 +55,13 @@ public class H2Repo
         };
     }
 
-    private String toSqlQuery(Select s) {
-        String select = toSqlSelect(s.select());
-        String from = toSqlFrom(s.from().from());
-        String joins = toSqlJoins(s.from().joins());
-        String where = toSqlWhere(s.from().where());
-        String groupBy = toSqlGroupBy(s.from().groupBy());
-        String orderBy = toSqlOrderBy(s.from().orderBy());
+    private String toSqlQuery(Query q) {
+        String select = toSqlSelect(q.select());
+        String from = toSqlFrom(q.from());
+        String joins = toSqlJoins(q.joins());
+        String where = toSqlWhere(q.where());
+        String groupBy = toSqlGroupBy(q.groupBy());
+        String orderBy = toSqlOrderBy(q.orderBy());
 
         return select + "\n" +
                from + "\n" +
