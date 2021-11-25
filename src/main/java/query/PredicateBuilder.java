@@ -4,23 +4,30 @@ public class PredicateBuilder
 {
     private Predicate pred;
 
+    private PredicateBuilder(Predicate pred) {
+        this.pred = pred;
+    }
+
     public PredicateBuilder(Term l, Op op, Term r) {
         this.pred = new BinOp(l, op, r);
     }
 
-    public PredicateBuilder and(PredicateBuilder and) {
-        this.pred = new And(pred, and.build());
-        return this;
+    public static PredicateBuilder not(PredicateBuilder pred) {
+        return new PredicateBuilder(new Not(pred.build()));
     }
 
-    public PredicateBuilder or(PredicateBuilder or) {
-        this.pred = new Or(pred, or.build());
-        return this;
+    public static PredicateBuilder either(
+            PredicateBuilder l,
+            PredicateBuilder r
+    ) {
+        return new PredicateBuilder(new Or(l.build(), r.build()));
     }
 
-    public PredicateBuilder not() {
-        this.pred = new Not(pred);
-        return this;
+    public static PredicateBuilder allOf(
+            PredicateBuilder l,
+            PredicateBuilder r
+    ) {
+        return new PredicateBuilder(new And(l.build(), r.build()));
     }
 
     public Predicate build()

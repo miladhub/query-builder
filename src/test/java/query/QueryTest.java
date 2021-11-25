@@ -7,10 +7,11 @@ import org.junit.Test;
 import java.sql.SQLException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
 import static query.AttrType.*;
 import static query.Entities.*;
 import static query.OrderByMode.*;
+import static query.PredicateBuilder.*;
 import static query.Queries.*;
 
 public class QueryTest
@@ -108,11 +109,9 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str))
                         .from(foo)
-                        .where(
-                                pred(attr(foo_str), like(), value("bar%"))
-                                        .or(
-                                                //TODO improve readability
-                                                pred(attr(foo_int), eq(), nullVal()).not()));
+                        .where(either(
+                                pred(attr(foo_str), like(), value("bar%")),
+                                not(pred(attr(foo_int), eq(), nullVal()))));
 
         assertThat(
                 fetch(query),
