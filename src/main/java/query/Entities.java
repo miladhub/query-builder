@@ -21,9 +21,13 @@ public class Entities
         return new Attr(type, name);
     }
 
-    public static Term attr(Attr attr)
+    public static AttrTerm attr(Attr attr)
     {
         return new AttrTerm(attr);
+    }
+
+    public static Term max(AttrTerm t) {
+        return new Max(t);
     }
 
     public static AttrValue strValue(

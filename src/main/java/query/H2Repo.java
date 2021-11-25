@@ -12,95 +12,69 @@ public class H2Repo
         implements Repository
 {
     @Override
-    public Try<List<List<Entity>>> select(Query q) {
-        return Try.of(() -> queryEntities(q));
-    }
-
-    @Override
     public Try<List<List<Object>>> select(Select s) {
-        return select(s.from()).map(es -> toObjects(s, es));
+        return Try.of(() -> query(s));
     }
 
-    private List<List<Object>> toObjects(
-            Select sq,
-            List<List<Entity>> es
-    ) {
-        return es.map(e -> project(e, sq.select()));
-    }
-
-    private List<Object> project(
-            List<Entity> es,
-            List<Term> select
-    ) {
-        return select.map(t ->
-                switch (t) {
-                    case AttrTerm at -> es.flatMap(Entity::attrs)
-                            .filter(a -> a.attr().equals(at.attr()))
-                            .map(this::attrValue)
-                            .get();
-                    case Value v -> v.value();
-                    case Null ignored -> null;
-                });
-    }
-
-    private Object attrValue(AttrValue av) {
-        return switch (av) {
-            case StrAttrValue sv -> sv.value();
-            case IntAttrValue iv -> iv.value();
-        };
-    }
-
-    private List<List<Entity>> queryEntities(Query q)
-    throws SQLException {
-        String sql = toSqlQuery(q);
+    private List<List<Object>> query(Select s) throws SQLException {
+        String sql = toSqlQuery(s);
 
         try (
                 Connection c = createConnection();
                 PreparedStatement select = c.prepareStatement(sql)
         ) {
             ResultSet rs = select.executeQuery();
-            java.util.List<java.util.List<Entity>> rows = new ArrayList<>();
+            java.util.List<java.util.List<Object>> rows = new ArrayList<>();
 
             while (rs.next()) {
-                java.util.List<Entity> row = new ArrayList<>();
-                row.add(readEntity(q.from().et(), rs));
-                for (Join j : q.joins()) {
-                    row.add(readEntity(j.from().et(), rs));
+                java.util.List<Object> row = new ArrayList<>();
+
+                int i = 1;
+                for (Term term : s.select()) {
+                    Object value = switch (term) {
+                        case Value v -> v;
+                        case Null ignored -> null;
+                        case AttrTerm at -> readAttr(i, at.attr(), rs);
+                        case Max max -> readAttr(i, max.t().attr(), rs);
+                    };
+                    i++;
+
+                    row.add(value);
                 }
+
                 rows.add(row);
             }
             return List.ofAll(rows).map(List::ofAll);
         }
     }
 
-    private String toSqlQuery(Query q) {
-        String select = toSqlSelect(q);
-        String from = toSqlFrom(q.from());
-        String joins = toSqlJoins(q.joins());
-        String where = toSqlWhere(q.where());
-        String orderBy = toSqlOrderBy(q.orderBy());
+    private Object readAttr(int i, Attr attr, ResultSet rs) throws SQLException {
+        return switch (attr.type()) {
+            case Str -> rs.getString(i);
+            case Int -> rs.getInt(i);
+        };
+    }
+
+    private String toSqlQuery(Select s) {
+        String select = toSqlSelect(s.select());
+        String from = toSqlFrom(s.from().from());
+        String joins = toSqlJoins(s.from().joins());
+        String where = toSqlWhere(s.from().where());
+        String groupBy = toSqlGroupBy(s.from().groupBy());
+        String orderBy = toSqlOrderBy(s.from().orderBy());
 
         return select + "\n" +
                from + "\n" +
                joins + "\n" +
                where + "\n" +
+               groupBy + "\n" +
                orderBy;
     }
 
-    private String toSqlSelect(Query query) {
-        return "select " +
-                query.from().et().name() + ".id, " +
-                query.from().et().attrs()
-                        .map(attr -> query.from().et().name() + "." + attr.name())
-                        .collect(joining(", ")) +
-                (query.joins().isEmpty() ? "" : ", ") +
-                query.joins()
-                        .map(j -> j.from().et().name() + ".id, ")
-                        .collect(joining(", ")) +
-                query.joins()
-                        .flatMap(j -> j.from().et().attrs().map(
-                                attr -> j.from().et().name() + "." + attr.name()))
-                        .collect(joining(", "));
+    private String toSqlSelect(List<Term> terms) {
+        return "select " + terms
+                .map(this::toSql)
+                .collect(joining(", "));
     }
 
     private String toSqlFrom(From from) {
@@ -133,28 +107,15 @@ public class H2Repo
                 .collect(joining(", "));
     }
 
-    private String toSql(OrderBy orderBy) {
-        return toSql(orderBy.t()) + " " + orderBy.mode().name().toLowerCase();
+    private String toSqlGroupBy(List<Term> groupBy) {
+        return groupBy.isEmpty()
+                ? ""
+                : "group by " + groupBy.map(this::toSql)
+                .collect(joining(", "));
     }
 
-    private Entity readEntity(EntityType et, ResultSet rs)
-    throws SQLException {
-        String id = rs.getString(et.name() + ".id");
-
-        java.util.List<AttrValue> avs = new ArrayList<>();
-
-        for (Attr attr : et.attrs()) {
-            switch (attr.type()) {
-                case Str -> avs.add(new StrAttrValue(
-                        attr,
-                        rs.getString(attr.name())));
-                case Int -> avs.add(new IntAttrValue(
-                        attr,
-                        rs.getInt(attr.name())));
-            }
-        }
-
-        return new Entity(et, id, List.ofAll(avs));
+    private String toSql(OrderBy orderBy) {
+        return toSql(orderBy.t()) + " " + orderBy.mode().name().toLowerCase();
     }
 
     public void init(EntityType... types)
@@ -202,11 +163,12 @@ public class H2Repo
         };
     }
 
-    private String toSql(Term t) {
-        return switch (t) {
+    private String toSql(Term term) {
+        return switch (term) {
             case AttrTerm at -> at.attr().name();
             case Value v -> "'" + v.value().toString() + "'";
             case Null ignored -> "null";
+            case Max max -> "max( " + toSql(max.t()) + ")";
         };
     }
 

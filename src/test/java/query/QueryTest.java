@@ -25,6 +25,8 @@ public class QueryTest
             "foo_str_1"), intValue(foo_int, 42));
     private final Entity foo_2 = newEntity(foo, "foo_2", strValue(foo_str,
             "foo_str_2"), intValue(foo_int, 43));
+    private final Entity foo_3 = newEntity(foo, "foo_3", strValue(foo_str,
+            "foo_str_2"), intValue(foo_int, 44));
 
     private final Attr bar_int = attr(Int, "bar_int");
     private final Attr bar_str = attr(Str, "bar_str");
@@ -70,6 +72,20 @@ public class QueryTest
                               .from(foo)
                               .order(by(attr(foo_int), DESC))),
                 contains(contains("foo_str_2", 43), contains("foo_str_1", 42)));
+    }
+
+    @Test
+    public void select_group_by() throws SQLException
+    {
+        repo.addEntities(foo_3);
+
+        assertThat(
+                fetch(select(attr(foo_str), max(attr(foo_int)))
+                              .from(foo)
+                              .groupBy(attr(foo_str))
+                              .order(by(attr(foo_str), ASC))),
+                contains(contains("foo_str_1", 42),
+                         contains("foo_str_2", Math.max(43, 44))));
     }
 
     @Test
