@@ -4,8 +4,6 @@ import io.vavr.collection.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.SQLException;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static query.AttrType.*;
@@ -40,7 +38,6 @@ public class QueryTest
 
     @Before
     public void setUp()
-    throws SQLException
     {
         repo.init(foo, bar);
         repo.addEntities(foo_1, foo_2, bar_1, bar_2);
@@ -76,7 +73,7 @@ public class QueryTest
     }
 
     @Test
-    public void select_group_by() throws SQLException
+    public void select_group_by()
     {
         repo.addEntities(foo_3);
 

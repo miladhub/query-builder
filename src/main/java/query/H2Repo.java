@@ -15,6 +15,16 @@ public class H2Repo
         return Try.of(() -> query(q));
     }
 
+    @Override
+    public void init(EntityType... types) {
+        Try.run(() -> init(List.of(types)));
+    }
+
+    @Override
+    public void addEntities(Entity... es) {
+        Try.run(() -> addEntities(List.of(es)));
+    }
+
     private List<List<Object>> query(Query q) throws SQLException {
         String sql = toSqlQuery(q);
 
@@ -119,7 +129,7 @@ public class H2Repo
         return toSql(orderBy.t()) + " " + orderBy.mode().name().toLowerCase();
     }
 
-    public void init(EntityType... types)
+    private void init(List<EntityType> types)
     throws SQLException {
         for (EntityType type : types) {
             try (
@@ -182,7 +192,7 @@ public class H2Repo
         };
     }
 
-    public void addEntities(Entity... es)
+    private void addEntities(List<Entity> es)
     throws SQLException {
         try (Connection c = createConnection()) {
             for (Entity e : es) {
