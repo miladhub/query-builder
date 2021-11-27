@@ -11,11 +11,6 @@ import static java.util.stream.Collectors.joining;
 public class H2Repo
         implements Repository {
     @Override
-    public Try<List<List<Object>>> select(Query q) {
-        return Try.of(() -> query(q));
-    }
-
-    @Override
     public void init(EntityType... types) {
         Try.run(() -> init(List.of(types)));
     }
@@ -23,6 +18,70 @@ public class H2Repo
     @Override
     public void addEntities(Entity... es) {
         Try.run(() -> addEntities(List.of(es)));
+    }
+
+    @Override
+    public Try<List<List<Object>>> select(Query q) {
+        return Try.of(() -> query(q));
+    }
+
+    private void init(List<EntityType> types)
+    throws SQLException {
+        for (EntityType type : types) {
+            try (
+                    Connection c = createConnection();
+                    Statement s = c.createStatement()
+            ) {
+                s.execute("drop table if exists " + type.name());
+                String columnsDdl =
+                        List.of("id varchar primary key")
+                                .appendAll(type.attrs().map(this::colDdl))
+                                .collect(joining(", "));
+
+                String ddl = "create table " + type.name() +
+                        " (" + columnsDdl + ")";
+                s.execute(ddl);
+            }
+        }
+    }
+
+    private String colDdl(Attr attr) {
+        return attr.name() + switch (attr.type()) {
+            case Str -> " varchar";
+            case Int -> " int";
+        };
+    }
+
+    private void addEntities(List<Entity> es)
+    throws SQLException {
+        try (Connection c = createConnection()) {
+            for (Entity e : es) {
+                String dml = List.of("id")
+                        .appendAll(e.attrs().map(av -> av.attr().name()))
+                        .collect(joining(", "));
+
+                int idx = 0;
+                try (
+                        PreparedStatement insert = c.prepareStatement(
+                                "insert into " + e.type().name() +
+                                        " (" + dml + ") values (" +
+                                        "?" + ", ?" .repeat(e.attrs().size()) + ")")
+                ) {
+                    insert.setString(++idx, e.id());
+                    for (AttrValue a : e.attrs()) {
+                        switch (a) {
+                            case StrAttrValue s -> insert.setString(
+                                    ++idx,
+                                    s.value());
+                            case IntAttrValue i -> insert.setInt(
+                                    ++idx,
+                                    i.value());
+                        }
+                    }
+                    insert.execute();
+                }
+            }
+        }
     }
 
     private List<List<Object>> query(Query q) throws SQLException {
@@ -57,15 +116,6 @@ public class H2Repo
         }
     }
 
-    private Object readAttr(
-            int i, Attr attr, ResultSet rs
-    ) throws SQLException {
-        return switch (attr.type()) {
-            case Str -> rs.getString(i);
-            case Int -> rs.getInt(i);
-        };
-    }
-
     private String toSqlQuery(Query q) {
         String select = toSqlSelect(q.select());
         String from = toSqlFrom(q.from());
@@ -75,11 +125,11 @@ public class H2Repo
         String orderBy = toSqlOrderBy(q.orderBy());
 
         return select + "\n" +
-               from + "\n" +
-               joins + "\n" +
-               where + "\n" +
-               groupBy + "\n" +
-               orderBy;
+                from + "\n" +
+                joins + "\n" +
+                where + "\n" +
+                groupBy + "\n" +
+                orderBy;
     }
 
     private String toSqlSelect(List<Term> terms) {
@@ -90,16 +140,16 @@ public class H2Repo
 
     private String toSqlFrom(From from) {
         return "from " + from.et().name() +
-               " as " +
-               from.et().name().toLowerCase();
+                " as " +
+                from.et().name().toLowerCase();
     }
 
     private String toSqlJoins(List<Join> joins) {
         return joins
                 .map(j -> "join " + j.from().et().name() + " " +
-                          "on " + j.on()
-                                  .map(this::toSql)
-                                  .collect(joining(" and ")))
+                        "on " + j.on()
+                        .map(this::toSql)
+                        .collect(joining(" and ")))
                 .collect(joining("\n"));
     }
 
@@ -129,44 +179,17 @@ public class H2Repo
         return toSql(orderBy.t()) + " " + orderBy.mode().name().toLowerCase();
     }
 
-    private void init(List<EntityType> types)
-    throws SQLException {
-        for (EntityType type : types) {
-            try (
-                    Connection c = createConnection();
-                    Statement s = c.createStatement()
-            ) {
-                s.execute("drop table if exists " + type.name());
-                String columnsDdl =
-                        List.of("id varchar primary key")
-                                .appendAll(type.attrs().map(this::colDdl))
-                                .collect(joining(", "));
-
-                String ddl = "create table " + type.name() +
-                             " (" + columnsDdl + ")";
-                s.execute(ddl);
-            }
-        }
-    }
-
-    private String colDdl(Attr attr) {
-        return attr.name() + switch (attr.type()) {
-            case Str -> " varchar";
-            case Int -> " int";
-        };
-    }
-
     private String toSql(Predicate p) {
         return switch (p) {
             case BinOp binOp -> {
                 if (binOp.right().equals(new Null()))
                     yield toSql(binOp.left()) +
-                          " is " +
-                          toSql(binOp.right());
+                            " is " +
+                            toSql(binOp.right());
                 else
                     yield toSql(binOp.left()) +
-                          " " + toSql(binOp.op()) + " " +
-                          toSql(binOp.right());
+                            " " + toSql(binOp.op()) + " " +
+                            toSql(binOp.right());
             }
             case And and -> "( " + toSql(and.left()) + " ) and ( " + toSql(and.right()) + " )";
             case Or or -> "( " + toSql(or.left()) + " ) or ( " + toSql(or.right()) + " )";
@@ -192,36 +215,13 @@ public class H2Repo
         };
     }
 
-    private void addEntities(List<Entity> es)
-    throws SQLException {
-        try (Connection c = createConnection()) {
-            for (Entity e : es) {
-                String dml = List.of("id")
-                        .appendAll(e.attrs().map(av -> av.attr().name()))
-                        .collect(joining(", "));
-
-                int idx = 0;
-                try (
-                        PreparedStatement insert = c.prepareStatement(
-                                "insert into " + e.type().name() +
-                                " (" + dml + ") values (" +
-                                "?" + ", ?" .repeat(e.attrs().size()) + ")")
-                ) {
-                    insert.setString(++idx, e.id());
-                    for (AttrValue a : e.attrs()) {
-                        switch (a) {
-                            case StrAttrValue s -> insert.setString(
-                                    ++idx,
-                                    s.value());
-                            case IntAttrValue i -> insert.setInt(
-                                    ++idx,
-                                    i.value());
-                        }
-                    }
-                    insert.execute();
-                }
-            }
-        }
+    private Object readAttr(
+            int i, Attr attr, ResultSet rs
+    ) throws SQLException {
+        return switch (attr.type()) {
+            case Str -> rs.getString(i);
+            case Int -> rs.getInt(i);
+        };
     }
 
     private static Connection createConnection()

@@ -3,6 +3,10 @@ package query;
 import io.vavr.collection.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -12,9 +16,21 @@ import static query.OrderByMode.*;
 import static query.PredicateBuilder.*;
 import static query.Queries.*;
 
+@RunWith(Parameterized.class)
 public class QueryTest
 {
-    private final H2Repo repo = new H2Repo();
+    private final H2Repo repo;
+
+    public QueryTest(H2Repo repo) {
+        this.repo = repo;
+    }
+
+    @Parameterized.Parameters
+    public static java.util.List<Repository> data() {
+        return Arrays.asList(
+                new H2Repo()
+        );
+    }
 
     private final Attr foo_str = attr(Str, "foo_str");
     private final Attr foo_int = attr(Int, "foo_int");
