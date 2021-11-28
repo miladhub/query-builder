@@ -6,14 +6,14 @@ import static query.Queries.pred;
 
 public class QueryBuilder
 {
-    private final List<Term> select;
+    private final List<SelectTerm> select;
     private From from;
     private List<Predicate> where = List.of();
     private List<Join> joins = List.of();
     private GroupByBuilder groupBy = new GroupByBuilder(List.of());
     private List<OrderBy> orderBy = List.of();
 
-    public QueryBuilder(List<Term> select)
+    public QueryBuilder(List<SelectTerm> select)
     {
         this.select = select;
     }
@@ -41,13 +41,13 @@ public class QueryBuilder
         return this;
     }
 
-    public QueryBuilder where(AttrTerm l, Op o, Term r)
+    public QueryBuilder where(AttrClauseTerm l, Op o, ClauseTerm r)
     {
         this.where = List.of(pred(l, o, r).build());
         return this;
     }
 
-    public QueryBuilder and(AttrTerm l, Op o, Term r)
+    public QueryBuilder and(AttrClauseTerm l, Op o, ClauseTerm r)
     {
         this.where = where.append(pred(l, o, r).build());
         return this;
@@ -65,7 +65,7 @@ public class QueryBuilder
         return this;
     }
 
-    public QueryBuilder groupBy(Term... groupBy)
+    public QueryBuilder groupBy(AttrSelectTerm... groupBy)
     {
         this.groupBy = new GroupByBuilder(List.of(groupBy));
         return this;

@@ -108,8 +108,8 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
-                        .where(attr(foo_str), like(), value("foo_str_%"))
-                        .and(attr(foo_int), lt(), value(43));
+                        .where(clauseAttr(foo_str), like(), value("foo_str_%"))
+                        .and(clauseAttr(foo_int), lt(), value(43));
 
         assertThat(
                 fetch(query),
@@ -122,8 +122,8 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
-                        .where(attr(foo_str), like(), value("foo_str_%"))
-                        .and(attr(foo_int), gt(), value(41));
+                        .where(clauseAttr(foo_str), like(), value("foo_str_%"))
+                        .and(clauseAttr(foo_int), gt(), value(41));
 
         assertThat(
                 fetch(query),
@@ -137,8 +137,8 @@ public class QueryTest
                 select(attr(foo_str))
                         .from(foo)
                         .where(either(
-                                pred(attr(foo_str), like(), value("bar%")),
-                                not(pred(attr(foo_int), eq(), nullVal()))));
+                                pred(clauseAttr(foo_str), like(), value("bar%")),
+                                not(pred(clauseAttr(foo_int), eq(), nullVal()))));
 
         assertThat(
                 fetch(query),
@@ -152,7 +152,7 @@ public class QueryTest
                 select(attr(foo_str), attr(bar_str))
                         .from(foo)
                         .join(JoinBuilder.type(bar)
-                                .on(pred(attr(foo_int), eq(), attr(bar_int))));
+                                .on(pred(clauseAttr(foo_int), eq(), clauseAttr(bar_int))));
 
         assertThat(
                 fetch(query),
@@ -165,9 +165,9 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str), attr(bar_str))
                         .from(foo)
-                        .where(attr(foo_int), lt(), value(43))
+                        .where(clauseAttr(foo_int), lt(), value(43))
                         .join(JoinBuilder.type(bar)
-                                .on(pred(attr(foo_int), eq(), attr(bar_int))));
+                                .on(pred(clauseAttr(foo_int), eq(), clauseAttr(bar_int))));
 
         assertThat(
                 fetch(query),

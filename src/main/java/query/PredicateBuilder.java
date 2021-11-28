@@ -8,7 +8,7 @@ public class PredicateBuilder
         this.pred = pred;
     }
 
-    public PredicateBuilder(AttrTerm l, Op op, Term r) {
+    public PredicateBuilder(AttrClauseTerm l, Op op, ClauseTerm r) {
         this.pred = new BinOp(l, op, r);
     }
 

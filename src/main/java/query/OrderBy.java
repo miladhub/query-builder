@@ -1,3 +1,3 @@
 package query;
 
-public record OrderBy(Term t, OrderByMode mode) {}
+public record OrderBy(SelectTerm t, OrderByMode mode) {}

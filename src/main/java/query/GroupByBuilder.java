@@ -4,10 +4,10 @@ import io.vavr.collection.List;
 
 public class GroupByBuilder
 {
-    private final List<Term> groupBy;
+    private final List<AttrSelectTerm> groupBy;
     private List<Predicate> having = List.of();
 
-    public GroupByBuilder(List<Term> groupBy)
+    public GroupByBuilder(List<AttrSelectTerm> groupBy)
     {
         this.groupBy = groupBy;
     }
@@ -18,7 +18,7 @@ public class GroupByBuilder
         return this;
     }
 
-    public GroupByBuilder and(AttrTerm l, Op o, Term r)
+    public GroupByBuilder and(AttrClauseTerm l, Op o, ClauseTerm r)
     {
         this.having = having.append(new BinOp(l, o, r));
         return this;
@@ -30,7 +30,7 @@ public class GroupByBuilder
         return this;
     }
 
-    public List<Term> groupBy()
+    public List<AttrSelectTerm> groupBy()
     {
         return groupBy;
     }

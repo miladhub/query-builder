@@ -98,11 +98,9 @@ public class H2Repo
                 java.util.List<Object> row = new ArrayList<>();
 
                 int i = 1;
-                for (Term term : q.select()) {
+                for (SelectTerm term : q.select()) {
                     Object value = switch (term) {
-                        case Value v -> v;
-                        case Null ignored -> null;
-                        case AttrTerm at -> readAttr(i, at.attr(), rs);
+                        case AttrSelectTerm at -> readAttr(i, at.attr(), rs);
                         case Max max -> readAttr(i, max.t().attr(), rs);
                     };
                     i++;
@@ -132,7 +130,7 @@ public class H2Repo
                 orderBy;
     }
 
-    private String toSqlSelect(List<Term> terms) {
+    private String toSqlSelect(List<SelectTerm> terms) {
         return "select " + terms
                 .map(this::toSql)
                 .collect(joining(", "));
@@ -168,7 +166,7 @@ public class H2Repo
                 .collect(joining(", "));
     }
 
-    private String toSqlGroupBy(List<Term> groupBy) {
+    private String toSqlGroupBy(List<AttrSelectTerm> groupBy) {
         return groupBy.isEmpty()
                 ? ""
                 : "group by " + groupBy.map(this::toSql)
@@ -197,11 +195,17 @@ public class H2Repo
         };
     }
 
-    private String toSql(Term term) {
+    private String toSql(ClauseTerm term) {
         return switch (term) {
-            case AttrTerm at -> at.attr().name();
+            case AttrClauseTerm at -> at.attr().name();
             case Value v -> "'" + v.value().toString() + "'";
             case Null ignored -> "null";
+        };
+    }
+
+    private String toSql(SelectTerm term) {
+        return switch (term) {
+            case AttrSelectTerm at -> at.attr().name();
             case Max max -> "max( " + toSql(max.t()) + ")";
         };
     }

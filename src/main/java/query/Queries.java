@@ -5,7 +5,7 @@ import io.vavr.collection.List;
 
 public class Queries
 {
-    public static QueryBuilder select(Term... terms) {
+    public static QueryBuilder select(SelectTerm... terms) {
         return new QueryBuilder(List.of(terms));
     }
 
@@ -13,7 +13,7 @@ public class Queries
         return new From(et);
     }
 
-    public static PredicateBuilder pred(AttrTerm l, Op op, Term r) {
+    public static PredicateBuilder pred(AttrClauseTerm l, Op op, ClauseTerm r) {
         return new PredicateBuilder(l, op, r);
     }
 
@@ -37,17 +37,17 @@ public class Queries
         return Op.LIKE;
     }
 
-    public static Term value(Object value)
+    public static ClauseTerm value(Object value)
     {
         return new Value(value);
     }
 
-    public static Term nullVal()
+    public static ClauseTerm nullVal()
     {
         return new Null();
     }
 
-    public static OrderBy by(Term t, OrderByMode mode) {
+    public static OrderBy by(SelectTerm t, OrderByMode mode) {
         return new OrderBy(t, mode);
     }
 }

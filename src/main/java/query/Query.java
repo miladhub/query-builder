@@ -3,11 +3,11 @@ package query;
 import io.vavr.collection.List;
 
 public record Query(
-        List<Term> select,
+        List<SelectTerm> select,
         From from,
         List<Predicate> where,
         List<Join> joins,
-        List<Term> groupBy,
+        List<AttrSelectTerm> groupBy,
         List<Predicate> having,
         List<OrderBy> orderBy
 )

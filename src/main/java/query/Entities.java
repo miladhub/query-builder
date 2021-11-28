@@ -21,12 +21,17 @@ public class Entities
         return new Attr(type, name);
     }
 
-    public static AttrTerm attr(Attr attr)
+    public static AttrSelectTerm attr(Attr attr)
     {
-        return new AttrTerm(attr);
+        return new AttrSelectTerm(attr);
     }
 
-    public static Term max(AttrTerm t) {
+    public static AttrClauseTerm clauseAttr(Attr attr)
+    {
+        return new AttrClauseTerm(attr);
+    }
+
+    public static SelectTerm max(AttrSelectTerm t) {
         return new Max(t);
     }
 
