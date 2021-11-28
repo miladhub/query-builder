@@ -208,10 +208,10 @@ public class H2Repo
 
     private String toSql(Op op) {
         return switch (op) {
-            case Eq ignored -> "=";
-            case Lt ignored -> "<";
-            case Gt ignored -> ">";
-            case Like ignored -> "like";
+            case EQ -> "=";
+            case LT -> "<";
+            case GT -> ">";
+            case LIKE -> "like";
         };
     }
 

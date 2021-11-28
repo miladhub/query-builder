@@ -13,28 +13,28 @@ public class Queries
         return new From(et);
     }
 
-    public static PredicateBuilder pred(Term l, Op op, Term r) {
+    public static PredicateBuilder pred(AttrTerm l, Op op, Term r) {
         return new PredicateBuilder(l, op, r);
     }
 
     public static Op eq()
     {
-        return new Eq();
+        return Op.EQ;
     }
 
     public static Op lt()
     {
-        return new Lt();
+        return Op.LT;
     }
 
     public static Op gt()
     {
-        return new Gt();
+        return Op.GT;
     }
 
     public static Op like()
     {
-        return new Like();
+        return Op.LIKE;
     }
 
     public static Term value(Object value)

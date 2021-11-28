@@ -18,7 +18,7 @@ public class GroupByBuilder
         return this;
     }
 
-    public GroupByBuilder and(Term l, Op o, Term r)
+    public GroupByBuilder and(AttrTerm l, Op o, Term r)
     {
         this.having = having.append(new BinOp(l, o, r));
         return this;

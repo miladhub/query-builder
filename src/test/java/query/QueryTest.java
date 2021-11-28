@@ -103,7 +103,7 @@ public class QueryTest
     }
 
     @Test
-    public void select_from_foo_where()
+    public void select_from_foo_where_lt()
     {
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
@@ -114,6 +114,20 @@ public class QueryTest
         assertThat(
                 fetch(query),
                 contains(contains("foo_str_1", 42)));
+    }
+
+    @Test
+    public void select_from_foo_where_gt()
+    {
+        QueryBuilder query =
+                select(attr(foo_str), attr(foo_int))
+                        .from(foo)
+                        .where(attr(foo_str), like(), value("foo_str_%"))
+                        .and(attr(foo_int), gt(), value(41));
+
+        assertThat(
+                fetch(query),
+                contains(contains("foo_str_1", 42), contains("foo_str_2", 43)));
     }
 
     @Test

@@ -41,13 +41,13 @@ public class QueryBuilder
         return this;
     }
 
-    public QueryBuilder where(Term l, Op o, Term r)
+    public QueryBuilder where(AttrTerm l, Op o, Term r)
     {
         this.where = List.of(pred(l, o, r).build());
         return this;
     }
 
-    public QueryBuilder and(Term l, Op o, Term r)
+    public QueryBuilder and(AttrTerm l, Op o, Term r)
     {
         this.where = where.append(pred(l, o, r).build());
         return this;
