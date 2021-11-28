@@ -1,8 +1,10 @@
 package query;
 
-import com.mongodb.client.FindIterable;
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Sorts;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -10,6 +12,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.*;
@@ -75,13 +78,29 @@ public class MongoRepo
                 .map(at -> ((AttrSelectTerm) at).attr().name())
                 .toJavaList());
         Bson projection = fields(include, excludeId());
-        FindIterable<Document> find =
-                coll.find(toFiltersDoc(q.where()))
-                        .projection(projection);
+
+        java.util.List<Bson> stages = new ArrayList<>(Arrays.asList(
+                Aggregates.match(toFiltersDoc(q.where())),
+                Aggregates.project(projection)
+        ));
+
+        if (!q.orderBy().isEmpty())
+            stages.add(Aggregates.sort(toSortDoc(q.orderBy())));
+
+        AggregateIterable<Document> find = coll.aggregate(stages);
 
         ArrayList<Document> l = new ArrayList<>();
         find.into(l);
         return List.ofAll(l).map(d -> List.ofAll(d.values()));
+    }
+
+    private Bson toSortDoc(List<OrderBy> orderBy) {
+        return !orderBy.isEmpty()
+                ? Sorts.orderBy(orderBy.map(ob -> switch (ob.mode()) {
+                    case ASC -> Sorts.ascending(ob.t().attr().name());
+                    case DESC -> Sorts.descending(ob.t().attr().name());
+                }).toJavaList())
+                : new Document();
     }
 
     private Bson toFiltersDoc(List<Predicate> where) {
