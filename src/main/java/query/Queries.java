@@ -47,7 +47,7 @@ public class Queries
         return new Null();
     }
 
-    public static OrderBy by(SelectTerm t, OrderByMode mode) {
+    public static OrderBy by(AttrSelectTerm t, OrderByMode mode) {
         return new OrderBy(t, mode);
     }
 }
