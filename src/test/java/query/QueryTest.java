@@ -1,6 +1,9 @@
 package query;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import io.vavr.collection.List;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,17 +22,25 @@ import static query.Queries.*;
 @RunWith(Parameterized.class)
 public class QueryTest
 {
-    private final H2Repo repo;
+    private static final MongoClient mongoClient = MongoClients.create();
+    private final Repository repo;
 
-    public QueryTest(H2Repo repo) {
+    public QueryTest(String ignored, Repository repo) {
         this.repo = repo;
     }
 
-    @Parameterized.Parameters
-    public static java.util.List<Repository> data() {
+    @Parameterized.Parameters(name = "{0}")
+    public static java.util.List<Object[]> data() {
         return Arrays.asList(
-                new H2Repo()
+                new Object[]{"H2", new H2Repo()},
+                new Object[]{"MongoDB",
+                        new MongoRepo(mongoClient.getDatabase("test"))}
         );
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        mongoClient.close();
     }
 
     private final Attr foo_str = attr(Str, "foo_str");
@@ -108,7 +119,7 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
-                        .where(clauseAttr(foo_str), like(), value("foo_str_%"))
+                        .where(clauseAttr(foo_str), eq(), value("foo_str_1"))
                         .and(clauseAttr(foo_int), lt(), value(43));
 
         assertThat(
@@ -117,12 +128,14 @@ public class QueryTest
     }
 
     @Test
-    public void select_from_foo_where_gt()
+    public void select_from_foo_where_gt_or()
     {
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
-                        .where(clauseAttr(foo_str), like(), value("foo_str_%"))
+                        .where(either(
+                                pred(clauseAttr(foo_str), eq(), value("foo_str_1")),
+                                pred(clauseAttr(foo_str), eq(), value("foo_str_2"))))
                         .and(clauseAttr(foo_int), gt(), value(41));
 
         assertThat(
@@ -137,7 +150,7 @@ public class QueryTest
                 select(attr(foo_str))
                         .from(foo)
                         .where(either(
-                                pred(clauseAttr(foo_str), like(), value("bar%")),
+                                pred(clauseAttr(foo_str), eq(), value("foobar")),
                                 not(pred(clauseAttr(foo_int), eq(), nullVal()))));
 
         assertThat(
