@@ -57,7 +57,9 @@ public class H2Repo
         try (Connection c = createConnection()) {
             for (Entity e : es) {
                 String dml = List.of("id")
-                        .appendAll(e.attrs().map(av -> toSql(av.attr())))
+                        .appendAll(e.attrs()
+                                .map(AttrValue::attr)
+                                .map(this::toSql))
                         .collect(joining(", "));
 
                 int idx = 0;
