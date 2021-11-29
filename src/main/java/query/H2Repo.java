@@ -103,7 +103,7 @@ public class H2Repo
                 for (SelectTerm term : q.select()) {
                     Object value = switch (term) {
                         case AttrSelectTerm at -> readAttr(i, at.attr(), rs);
-                        case Max max -> readAttr(i, max.t().attr(), rs);
+                        case Aggregation aggr -> readAttr(i, aggr.t().attr(), rs);
                     };
                     i++;
 
@@ -208,7 +208,13 @@ public class H2Repo
     private String toSql(SelectTerm term) {
         return switch (term) {
             case AttrSelectTerm at -> toSql(at.attr());
-            case Max max -> "max( " + toSql(max.t()) + ")";
+            case Aggregation aggregation -> switch (aggregation.at()) {
+                case MAX -> "max( " + toSql(aggregation.t()) + ")";
+                case MIN -> "min( " + toSql(aggregation.t()) + ")";
+                case SUM -> "sum( " + toSql(aggregation.t()) + ")";
+                case AVG -> "avg( " + toSql(aggregation.t()) + ")";
+                case COUNT -> "count( " + toSql(aggregation.t()) + ")";
+            };
         };
     }
 

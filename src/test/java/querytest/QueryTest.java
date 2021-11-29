@@ -101,7 +101,7 @@ public class QueryTest
     }
 
     @Test
-    public void select_group_by()
+    public void select_max_group_by()
     {
         repo.addEntities(foo_3);
 
@@ -112,6 +112,48 @@ public class QueryTest
                               .order(by(attr(foo_str), ASC))),
                 contains(contains("foo_str_1", 42),
                          contains("foo_str_2", Math.max(43, 44))));
+    }
+
+    @Test
+    public void select_min_group_by()
+    {
+        repo.addEntities(foo_3);
+
+        assertThat(
+                fetch(select(attr(foo_str), min(attr(foo_int)))
+                              .from(foo)
+                              .groupBy(foo_str)
+                              .order(by(attr(foo_str), ASC))),
+                contains(contains("foo_str_1", 42),
+                         contains("foo_str_2", Math.min(43, 44))));
+    }
+
+    @Test
+    public void select_avg_group_by()
+    {
+        repo.addEntities(foo_3);
+
+        assertThat(
+                fetch(select(attr(foo_str), avg(attr(foo_int)))
+                              .from(foo)
+                              .groupBy(foo_str)
+                              .order(by(attr(foo_str), ASC))),
+                contains(contains("foo_str_1", 42),
+                         contains("foo_str_2", (43 + 44) / 2)));
+    }
+
+    @Test
+    public void select_count_group_by()
+    {
+        repo.addEntities(foo_3);
+
+        assertThat(
+                fetch(select(attr(foo_str), count(attr(foo_int)))
+                              .from(foo)
+                              .groupBy(foo_str)
+                              .order(by(attr(foo_str), ASC))),
+                contains(contains("foo_str_1", 1),
+                         contains("foo_str_2", 2)));
     }
 
     @Test

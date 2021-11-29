@@ -5,6 +5,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Sorts;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -80,9 +82,13 @@ public class MongoRepo
         Bson projection = fields(include, excludeId());
 
         java.util.List<Bson> pipeline = new ArrayList<>(Arrays.asList(
-                Aggregates.match(toFiltersDoc(q.where())),
-                Aggregates.project(projection)
+                Aggregates.match(toFiltersDoc(q.where()))
         ));
+
+        if (!q.groupBy().isEmpty())
+            pipeline.addAll(toGroupByDocs(q).toJavaList());
+
+        pipeline.add(Aggregates.project(projection));
 
         if (!q.orderBy().isEmpty())
             pipeline.add(Aggregates.sort(toSortDoc(q.orderBy())));
@@ -92,6 +98,17 @@ public class MongoRepo
         ArrayList<Document> l = new ArrayList<>();
         find.into(l);
         return List.ofAll(l).map(d -> List.ofAll(d.values()));
+    }
+
+    private List<Bson> toGroupByDocs(Query q) {
+        List<Tuple2<Aggregation, Attr>> groups = q.groupBy()
+                .flatMap(gb -> q.select()
+                        .filter(s -> s instanceof Aggregation)
+                        .map(s -> (Aggregation) s)
+                        .filter(m -> m.t().attr().equals(gb))
+                        .map(m -> Tuple.of(m, gb)));
+
+        return null;
     }
 
     private Bson toSortDoc(List<OrderBy> orderBy) {

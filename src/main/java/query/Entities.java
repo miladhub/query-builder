@@ -32,8 +32,24 @@ public class Entities
     }
 
     public static SelectTerm max(AttrSelectTerm t) {
-        return new Max(t);
+        return new Aggregation(t, AggrType.MAX);
     }
+
+    public static SelectTerm min(AttrSelectTerm t) {
+        return new Aggregation(t, AggrType.MIN);
+    }
+
+    public static SelectTerm avg(AttrSelectTerm t) {
+        return new Aggregation(t, AggrType.AVG);
+    }
+
+    public static SelectTerm sum(AttrSelectTerm t) {
+        return new Aggregation(t, AggrType.SUM);
+    }
+    public static SelectTerm count(AttrSelectTerm t) {
+        return new Aggregation(t, AggrType.COUNT);
+    }
+
 
     public static AttrValue strValue(
             Attr attr,
