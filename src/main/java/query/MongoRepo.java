@@ -79,15 +79,15 @@ public class MongoRepo
                 .toJavaList());
         Bson projection = fields(include, excludeId());
 
-        java.util.List<Bson> stages = new ArrayList<>(Arrays.asList(
+        java.util.List<Bson> pipeline = new ArrayList<>(Arrays.asList(
                 Aggregates.match(toFiltersDoc(q.where())),
                 Aggregates.project(projection)
         ));
 
         if (!q.orderBy().isEmpty())
-            stages.add(Aggregates.sort(toSortDoc(q.orderBy())));
+            pipeline.add(Aggregates.sort(toSortDoc(q.orderBy())));
 
-        AggregateIterable<Document> find = coll.aggregate(stages);
+        AggregateIterable<Document> find = coll.aggregate(pipeline);
 
         ArrayList<Document> l = new ArrayList<>();
         find.into(l);
