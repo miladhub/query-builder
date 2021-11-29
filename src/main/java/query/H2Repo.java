@@ -46,7 +46,7 @@ public class H2Repo
     }
 
     private String colDdl(Attr attr) {
-        return attr.name() + switch (attr.type()) {
+        return toSql(attr) + switch (attr.type()) {
             case Str -> " varchar";
             case Int -> " int";
         };
@@ -57,7 +57,7 @@ public class H2Repo
         try (Connection c = createConnection()) {
             for (Entity e : es) {
                 String dml = List.of("id")
-                        .appendAll(e.attrs().map(av -> av.attr().name()))
+                        .appendAll(e.attrs().map(av -> toSql(av.attr())))
                         .collect(joining(", "));
 
                 int idx = 0;
@@ -166,7 +166,7 @@ public class H2Repo
                 .collect(joining(", "));
     }
 
-    private String toSqlGroupBy(List<AttrSelectTerm> groupBy) {
+    private String toSqlGroupBy(List<Attr> groupBy) {
         return groupBy.isEmpty()
                 ? ""
                 : "group by " + groupBy.map(this::toSql)
@@ -205,9 +205,13 @@ public class H2Repo
 
     private String toSql(SelectTerm term) {
         return switch (term) {
-            case AttrSelectTerm at -> at.attr().name();
+            case AttrSelectTerm at -> toSql(at.attr());
             case Max max -> "max( " + toSql(max.t()) + ")";
         };
+    }
+
+    private String toSql(Attr attr) {
+        return attr.name();
     }
 
     private String toSql(Op op) {

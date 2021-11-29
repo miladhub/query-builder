@@ -65,7 +65,7 @@ public class QueryBuilder
         return this;
     }
 
-    public QueryBuilder groupBy(AttrSelectTerm... groupBy)
+    public QueryBuilder groupBy(Attr... groupBy)
     {
         this.groupBy = new GroupByBuilder(List.of(groupBy));
         return this;

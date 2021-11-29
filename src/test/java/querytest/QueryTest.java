@@ -1,4 +1,4 @@
-package query;
+package querytest;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import query.*;
 
 import java.util.Arrays;
 
@@ -107,7 +108,7 @@ public class QueryTest
         assertThat(
                 fetch(select(attr(foo_str), max(attr(foo_int)))
                               .from(foo)
-                              .groupBy(attr(foo_str))
+                              .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
                 contains(contains("foo_str_1", 42),
                          contains("foo_str_2", Math.max(43, 44))));

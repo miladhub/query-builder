@@ -7,7 +7,7 @@ public record Query(
         From from,
         List<Predicate> where,
         List<Join> joins,
-        List<AttrSelectTerm> groupBy,
+        List<Attr> groupBy,
         List<Predicate> having,
         List<OrderBy> orderBy
 )
