@@ -1,0 +1,25 @@
+select f1, f2
+	from Foo
+	where f3 > 42
+
+select f1, b3
+	from Foo foo, Bar bar
+	where f1 > b3
+
+select f1
+	from Foo foo, (select * from Bar) bar 
+	where f1 > b3
+
+select f3, b3
+	from Foo foo
+	join Bar bar on foo.f1 = bar.b1
+
+select f3, sum(b3)
+	from Foo foo
+	join Bar bar on foo.f1 = bar.b1
+	where bar.b2 < 100
+	group by f3
+	having f3 > 42
+	order by f3
+
+

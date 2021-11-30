@@ -1,0 +1,12 @@
+Query {
+	from: [From],
+	where: [Predicate],
+	join: [Join],
+	groupBy: [Term],
+	having: [Predicate],
+	orderBy: [OrderBy]
+}
+From = Table String | Query
+Join = Join From [Predicate]
+OrderBy = OrderBy Term OrderByMode
+OrderByMode = Asc | Desc

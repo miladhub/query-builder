@@ -1,0 +1,148 @@
+db.orders.insert([
+   { "_id" : 1, "item" : "almonds", "price" : 12, "quantity" : 2 },
+   { "_id" : 2, "item" : "pecans", "price" : 20, "quantity" : 1 }
+])
+
+db.items.insert([
+  { "_id" : 1, "item" : "almonds", description: "almond clusters", "instock" : 120 },
+  { "_id" : 2, "item" : "bread", description: "raisin and nut bread", "instock" : 80 },
+  { "_id" : 3, "item" : "pecans", description: "candied pecans", "instock" : 60 }
+])
+
+db.orders.aggregate([
+   {
+      $lookup: {
+         from: "items",
+         localField: "item",    // field in the orders collection
+         foreignField: "item",  // field in the items collection
+         as: "fromItems"
+      }
+   },
+   {
+      $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$fromItems", 0 ] }, "$$ROOT" ] } }
+   },
+   { $project: { fromItems: 0 } }
+]).pretty();
+
+db.orders.aggregate([
+   {
+      $lookup: {
+         from: "items",
+         localField: "item",    // field in the orders collection
+         foreignField: "item",  // field in the items collection
+         as: "fromItems"
+      }
+   }]).pretty();
+
+db.orders.aggregate([
+   {
+      $lookup: {
+         from: "items",
+         localField: "item",    // field in the orders collection
+         foreignField: "item",  // field in the items collection
+         as: "fromItems"
+      }
+   },
+   {
+      $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$fromItems", 0 ] }, "$$ROOT" ] } }
+   }]).pretty();
+
+db.foo.aggregate([
+  {
+    $lookup:
+      {from: "bar",localField:"foo_int",foreignField:"bar_int",as:"bars"}
+  },
+  {$match: {"bars":{$ne:[]}}},
+  {
+      $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$bars", 0 ] }, "$$ROOT" ] } }
+  },
+  { $project: { bars: 0 } }
+]);
+
+db.foo.aggregate([
+  {
+    $lookup:
+      {from: "bar",localField:"foo_int",foreignField:"bar_int",as:"bars"}
+  },
+  {$match: {"bars":{$ne:[]}}},
+  {
+      $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$bars", 0 ] }, "$$ROOT" ] } }
+  },
+  { $project: { bars: 0 } },
+  { $match: { "bar_int":42 } },
+  {
+    $group:
+         {
+           _id: "$bar_str",
+           maxBarInt: { $max: "$bar_int" },
+           myCount: { $sum:1 }
+         }
+  }
+]);
+
+db.bar.aggregate([
+  {
+    $group:
+         {
+           _id: "$bar_str",
+           maxBarInt: { $max: "$bar_int" },
+           myCount: { $sum:1 }
+         }
+  }
+]);
+
+db.bar.aggregate([
+  {
+    $group:
+         {
+           _id: "$bar_str",
+           sumBarInt: { $sum: "$bar_int" },
+           maxBarInt: { $max: "$bar_int" }
+         }
+  }
+]);
+
+db.foo.aggregate([
+  {
+    $group:
+         {
+           _id: "$foo_str",
+           foo_int: { $sum: "$foo_int" }
+         }
+  },
+    { $project: {
+       _id: 0,
+       foo_str: "$_id",
+       foo_int: 1
+    }}
+]);
+
+Aggregates.group("$maxBarInt", Accumulators.sum("max", "$bar_int"))
+
+db.bar.aggregate([
+  {
+    $group:
+         {
+           _id: "$bar_str",
+           sumBarInt: { $sum: "$bar_int" },
+           maxBarInt: { $max: "$bar_int" }
+         }
+  },
+  {$match: {"maxBarInt":{$gt:50}}}
+]);
+
+db.bar.aggregate([
+  {
+    $group:
+         {
+           _id: "$bar_str",
+           sumBarInt: { $sum: "$bar_int" },
+           maxBarInt: { $max: "$bar_int" }
+         }
+  },
+  { $sort: { sumBarInt: -1 } }
+]);
+
+
+
+
