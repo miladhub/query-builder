@@ -36,10 +36,9 @@ public class MongoRepo
 
     @Override
     public void init(EntityType... types) {
-        List.of(types).forEach(t -> {
-            db.getCollection(t.name()).drop();
-            db.createCollection(t.name());
-        });
+        List.of(types)
+                .map(t -> db.getCollection(t.name()))
+                .forEach(MongoCollection::drop);
     }
 
     @Override
@@ -88,15 +87,15 @@ public class MongoRepo
         java.util.List<Bson> pipeline = new ArrayList<>();
 
         if (!q.where().isEmpty())
-            pipeline.add(Aggregates.match(toFiltersDoc(q.where())));
+            pipeline.add(match(toFiltersDoc(q.where())));
 
         if (!q.groupBy().isEmpty())
             pipeline.addAll(toGroupByDocs(q).toJavaList());
 
-        pipeline.add(Aggregates.project(projection));
+        pipeline.add(project(projection));
 
         if (!q.orderBy().isEmpty())
-            pipeline.add(Aggregates.sort(toSortDoc(q.orderBy())));
+            pipeline.add(sort(toSortDoc(q.orderBy())));
 
         AggregateIterable<Document> find = coll.aggregate(pipeline);
 
