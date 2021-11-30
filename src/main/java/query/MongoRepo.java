@@ -4,7 +4,6 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BsonField;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -17,6 +16,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static com.mongodb.client.model.Accumulators.*;
 import static com.mongodb.client.model.Aggregates.*;
@@ -89,6 +89,9 @@ public class MongoRepo
         if (!q.where().isEmpty())
             pipeline.add(match(toFiltersDoc(q.where())));
 
+        if (!q.joins().isEmpty())
+            pipeline.addAll(toJoinDocs(q).toJavaList());
+
         if (!q.groupBy().isEmpty())
             pipeline.addAll(toGroupByDocs(q).toJavaList());
 
@@ -113,6 +116,40 @@ public class MongoRepo
                     "_" +
                     aggr.t().attr().name();
         };
+    }
+
+    private List<Bson> toJoinDocs(Query q) {
+        return q.joins().flatMap(join -> toJoinDoc(q.from(), join));
+    }
+
+    private List<Bson> toJoinDoc(
+            From from,
+            Join join
+    ) {
+        String joinedColl = join.from().et().name();
+        String joinName = from.et().name() + "_" + joinedColl;
+
+        if (join.on().size() != 1
+                || !(join.on().get(0) instanceof BinOp on)
+                || !(((BinOp) join.on().get(0)).right() instanceof AttrClauseTerm foreign))
+            throw new UnsupportedOperationException();
+
+        String localField = on.left().attr().name();
+        String foreignField = foreign.attr().name();
+
+        return List.of(
+                lookup(joinedColl, localField, foreignField, joinName),
+                match(ne(joinName, java.util.List.of())),
+                new Document(
+                        "$addFields",
+                        new Document(joinName,
+                                new Document("$arrayElemAt",
+                                        Arrays.asList("$" + joinName, 0)))),
+                replaceRoot(
+                        new Document("$mergeObjects",
+                                Arrays.asList("$" + joinName, "$$ROOT"))),
+                new Document("$project", new Document(joinName, 0))
+        );
     }
 
     private List<Bson> toGroupByDocs(Query q) {
