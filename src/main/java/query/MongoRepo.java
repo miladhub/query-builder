@@ -6,7 +6,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.BsonField;
-import com.mongodb.client.model.Sorts;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
@@ -23,6 +22,7 @@ import static com.mongodb.client.model.Accumulators.*;
 import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.*;
+import static com.mongodb.client.model.Sorts.*;
 
 @SuppressWarnings("ClassCanBeRecord")
 public class MongoRepo
@@ -154,12 +154,10 @@ public class MongoRepo
     }
 
     private Bson toSortDoc(List<OrderBy> orderBy) {
-        return !orderBy.isEmpty()
-                ? Sorts.orderBy(orderBy.map(ob -> switch (ob.mode()) {
-                    case ASC -> Sorts.ascending(ob.t().attr().name());
-                    case DESC -> Sorts.descending(ob.t().attr().name());
-                }).toJavaList())
-                : new Document();
+        return orderBy(orderBy.map(ob -> switch (ob.mode()) {
+                    case ASC -> ascending(ob.t().attr().name());
+                    case DESC -> descending(ob.t().attr().name());
+                }).toJavaList());
     }
 
     private Bson toFiltersDoc(List<Predicate> where) {
