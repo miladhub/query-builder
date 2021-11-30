@@ -3,19 +3,24 @@ package query;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.BsonField;
 import com.mongodb.client.model.Sorts;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
+import org.bson.BsonDocument;
+import org.bson.BsonString;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
+import static com.mongodb.client.model.Accumulators.*;
+import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.*;
 
@@ -76,14 +81,14 @@ public class MongoRepo
                 db.getCollection(q.from().et().name());
 
         Bson include = include(q.select()
-                .filter(t -> t instanceof AttrSelectTerm)
-                .map(at -> ((AttrSelectTerm) at).attr().name())
+                .map(this::toFieldName)
                 .toJavaList());
         Bson projection = fields(include, excludeId());
 
-        java.util.List<Bson> pipeline = new ArrayList<>(Arrays.asList(
-                Aggregates.match(toFiltersDoc(q.where()))
-        ));
+        java.util.List<Bson> pipeline = new ArrayList<>();
+
+        if (!q.where().isEmpty())
+            pipeline.add(Aggregates.match(toFiltersDoc(q.where())));
 
         if (!q.groupBy().isEmpty())
             pipeline.addAll(toGroupByDocs(q).toJavaList());
@@ -95,9 +100,20 @@ public class MongoRepo
 
         AggregateIterable<Document> find = coll.aggregate(pipeline);
 
-        ArrayList<Document> l = new ArrayList<>();
-        find.into(l);
-        return List.ofAll(l).map(d -> List.ofAll(d.values()));
+        MongoIterable<List<Object>> map =
+                find.map(d -> q.select().map(s -> d.get(toFieldName(s))));
+        ArrayList<List<Object>> l = new ArrayList<>();
+        map.into(l);
+        return List.ofAll(l);
+    }
+
+    private String toFieldName(SelectTerm at) {
+        return switch (at) {
+            case AttrSelectTerm ast -> ast.attr().name();
+            case Aggregation aggr -> aggr.at().name().toLowerCase() +
+                    "_" +
+                    aggr.t().attr().name();
+        };
     }
 
     private List<Bson> toGroupByDocs(Query q) {
@@ -105,10 +121,36 @@ public class MongoRepo
                 .flatMap(gb -> q.select()
                         .filter(s -> s instanceof Aggregation)
                         .map(s -> (Aggregation) s)
-                        .filter(m -> m.t().attr().equals(gb))
                         .map(m -> Tuple.of(m, gb)));
+        return groups
+                .flatMap(this::toGroupByDoc);
+    }
 
-        return null;
+    private List<Bson> toGroupByDoc(Tuple2<Aggregation, Attr> g) {
+        String aggregatedFieldName = g._1.t().attr().name();
+        String groupedByFieldName = g._2.name();
+        String aggrModeName = g._1.at().name().toLowerCase();
+
+        BsonField aggrField = switch (g._1.at()) {
+            case SUM -> sum(aggrModeName + "_" + aggregatedFieldName,
+                    "$" + aggregatedFieldName);
+            case MAX -> max(aggrModeName + "_" + aggregatedFieldName,
+                    "$" + aggregatedFieldName);
+            case MIN -> min(aggrModeName + "_" + aggregatedFieldName,
+                    "$" + aggregatedFieldName);
+            case AVG -> avg(aggrModeName + "_" + aggregatedFieldName,
+                    "$" + aggregatedFieldName);
+            case COUNT -> sum(aggrModeName + "_" + aggregatedFieldName, 1);
+        };
+
+        return List.of(
+                group("$" + groupedByFieldName,
+                        aggrField),
+                project(fields(
+                        include(aggrModeName + "_" + aggregatedFieldName),
+                        new BsonDocument(groupedByFieldName, new BsonString("$_id")),
+                        excludeId()))
+        );
     }
 
     private Bson toSortDoc(List<OrderBy> orderBy) {

@@ -14,10 +14,15 @@ import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static query.AttrType.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static query.AttrType.Int;
+import static query.AttrType.Str;
 import static query.Entities.*;
-import static query.OrderByMode.*;
-import static query.PredicateBuilder.*;
+import static query.OrderByMode.ASC;
+import static query.OrderByMode.DESC;
+import static query.PredicateBuilder.either;
+import static query.PredicateBuilder.not;
 import static query.Queries.*;
 
 @RunWith(Parameterized.class)
@@ -53,7 +58,7 @@ public class QueryTest
     private final Entity foo_2 = newEntity(foo, "foo_2", strValue(foo_str,
             "foo_str_2"), intValue(foo_int, 43));
     private final Entity foo_3 = newEntity(foo, "foo_3", strValue(foo_str,
-            "foo_str_2"), intValue(foo_int, 44));
+            "foo_str_2"), intValue(foo_int, 57));
 
     private final Attr bar_int = attr(Int, "bar_int");
     private final Attr bar_str = attr(Str, "bar_str");
@@ -111,7 +116,7 @@ public class QueryTest
                               .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
                 contains(contains("foo_str_1", 42),
-                         contains("foo_str_2", Math.max(43, 44))));
+                         contains("foo_str_2", Math.max(43, 57))));
     }
 
     @Test
@@ -125,7 +130,21 @@ public class QueryTest
                               .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
                 contains(contains("foo_str_1", 42),
-                         contains("foo_str_2", Math.min(43, 44))));
+                         contains("foo_str_2", Math.min(43, 57))));
+    }
+
+    @Test
+    public void select_sum_group_by()
+    {
+        repo.addEntities(foo_3);
+
+        assertThat(
+                fetch(select(attr(foo_str), sum(attr(foo_int)))
+                        .from(foo)
+                        .groupBy(foo_str)
+                        .order(by(attr(foo_str), ASC))),
+                contains(contains("foo_str_1", 42),
+                        contains("foo_str_2", 43 + 57)));
     }
 
     @Test
@@ -133,13 +152,15 @@ public class QueryTest
     {
         repo.addEntities(foo_3);
 
-        assertThat(
-                fetch(select(attr(foo_str), avg(attr(foo_int)))
-                              .from(foo)
-                              .groupBy(foo_str)
-                              .order(by(attr(foo_str), ASC))),
-                contains(contains("foo_str_1", 42),
-                         contains("foo_str_2", (43 + 44) / 2)));
+        List<List<Object>> fetch = fetch(select(attr(foo_str),
+                avg(attr(foo_int)))
+                .from(foo)
+                .groupBy(foo_str)
+                .order(by(attr(foo_str), ASC)));
+        assertEquals("foo_str_1", fetch.get(0).get(0));
+        assertTrue("42", fetch.get(0).get(1).toString().startsWith("42"));
+        assertEquals("foo_str_2", fetch.get(1).get(0));
+        assertTrue("50", fetch.get(1).get(1).toString().startsWith("50"));
     }
 
     @Test
