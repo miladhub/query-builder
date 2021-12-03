@@ -53,21 +53,26 @@ public class QueryTest
     private final Attr foo_int = attr(Int, "foo_int");
     private final EntityType foo = Entities.newEntityType(
             "foo", foo_str, foo_int);
-    private final Entity foo_1 = newEntity(foo, "foo_1", strValue(foo_str,
-            "foo_str_1"), intValue(foo_int, 42));
-    private final Entity foo_2 = newEntity(foo, "foo_2", strValue(foo_str,
-            "foo_str_2"), intValue(foo_int, 43));
-    private final Entity foo_3 = newEntity(foo, "foo_3", strValue(foo_str,
-            "foo_str_2"), intValue(foo_int, 57));
+    private final Entity foo_1 = newEntity(foo, "foo_1",
+            strValue(foo_str, "str_1"), 
+            intValue(foo_int, 42));
+    private final Entity foo_2 = newEntity(foo, "foo_2",
+            strValue(foo_str, "str_2"),
+            intValue(foo_int, 43));
+    private final Entity foo_3 = newEntity(foo, "foo_3",
+            strValue(foo_str, "str_2"),
+            intValue(foo_int, 57));
 
     private final Attr bar_int = attr(Int, "bar_int");
     private final Attr bar_str = attr(Str, "bar_str");
     private final EntityType bar = Entities.newEntityType(
             "bar", bar_int, bar_str);
-    private final Entity bar_1 = newEntity(bar, "bar_1", strValue(bar_str,
-            "bar_str_2"), intValue(bar_int, 44));
-    private final Entity bar_2 = newEntity(bar, "bar_2", strValue(bar_str,
-            "bar_str_3"), intValue(bar_int, 42));
+    private final Entity bar_1 = newEntity(bar, "bar_1", 
+            strValue(bar_str, "str_2"),
+            intValue(bar_int, 44));
+    private final Entity bar_2 = newEntity(bar, "bar_2",
+            strValue(bar_str, "str_3"),
+            intValue(bar_int, 42));
 
     @Before
     public void setUp()
@@ -84,7 +89,7 @@ public class QueryTest
                         .from(type(foo));
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1"), contains("foo_str_2")));
+                contains(contains("str_1"), contains("str_2")));
     }
 
     @Test
@@ -92,7 +97,7 @@ public class QueryTest
     {
         assertThat(
                 fetch(select(attr(foo_str), attr(foo_int)).from(foo)),
-                contains(contains("foo_str_1", 42), contains("foo_str_2", 43)));
+                contains(contains("str_1", 42), contains("str_2", 43)));
     }
 
     @Test
@@ -102,7 +107,7 @@ public class QueryTest
                 fetch(select(attr(foo_str), attr(foo_int))
                               .from(foo)
                               .order(by(attr(foo_int), DESC))),
-                contains(contains("foo_str_2", 43), contains("foo_str_1", 42)));
+                contains(contains("str_2", 43), contains("str_1", 42)));
     }
 
     @Test
@@ -115,8 +120,8 @@ public class QueryTest
                               .from(foo)
                               .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
-                contains(contains("foo_str_1", 42),
-                         contains("foo_str_2", Math.max(43, 57))));
+                contains(contains("str_1", 42),
+                         contains("str_2", Math.max(43, 57))));
     }
 
     @Test
@@ -129,8 +134,8 @@ public class QueryTest
                               .from(foo)
                               .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
-                contains(contains("foo_str_1", 42),
-                         contains("foo_str_2", Math.min(43, 57))));
+                contains(contains("str_1", 42),
+                         contains("str_2", Math.min(43, 57))));
     }
 
     @Test
@@ -143,8 +148,8 @@ public class QueryTest
                         .from(foo)
                         .groupBy(foo_str)
                         .order(by(attr(foo_str), ASC))),
-                contains(contains("foo_str_1", 42),
-                        contains("foo_str_2", 43 + 57)));
+                contains(contains("str_1", 42),
+                        contains("str_2", 43 + 57)));
     }
 
     @Test
@@ -157,9 +162,9 @@ public class QueryTest
                 .from(foo)
                 .groupBy(foo_str)
                 .order(by(attr(foo_str), ASC)));
-        assertEquals("foo_str_1", fetch.get(0).get(0));
+        assertEquals("str_1", fetch.get(0).get(0));
         assertTrue("42", fetch.get(0).get(1).toString().startsWith("42"));
-        assertEquals("foo_str_2", fetch.get(1).get(0));
+        assertEquals("str_2", fetch.get(1).get(0));
         assertTrue("50", fetch.get(1).get(1).toString().startsWith("50"));
     }
 
@@ -173,8 +178,8 @@ public class QueryTest
                               .from(foo)
                               .groupBy(foo_str)
                               .order(by(attr(foo_str), ASC))),
-                contains(contains("foo_str_1", 1),
-                         contains("foo_str_2", 2)));
+                contains(contains("str_1", 1),
+                         contains("str_2", 2)));
     }
 
     @Test
@@ -183,12 +188,12 @@ public class QueryTest
         QueryBuilder query =
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
-                        .where(clauseAttr(foo_str), eq(), value("foo_str_1"))
+                        .where(clauseAttr(foo_str), eq(), value("str_1"))
                         .and(clauseAttr(foo_int), lt(), value(43));
 
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1", 42)));
+                contains(contains("str_1", 42)));
     }
 
     @Test
@@ -198,13 +203,13 @@ public class QueryTest
                 select(attr(foo_str), attr(foo_int))
                         .from(foo)
                         .where(either(
-                                pred(clauseAttr(foo_str), eq(), value("foo_str_1")),
-                                pred(clauseAttr(foo_str), eq(), value("foo_str_2"))))
+                                pred(clauseAttr(foo_str), eq(), value("str_1")),
+                                pred(clauseAttr(foo_str), eq(), value("str_2"))))
                         .and(clauseAttr(foo_int), gt(), value(41));
 
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1", 42), contains("foo_str_2", 43)));
+                contains(contains("str_1", 42), contains("str_2", 43)));
     }
 
     @Test
@@ -219,7 +224,7 @@ public class QueryTest
 
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1"), contains("foo_str_2")));
+                contains(contains("str_1"), contains("str_2")));
     }
 
     @Test
@@ -233,7 +238,23 @@ public class QueryTest
 
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1", "bar_str_3")));
+                contains(contains("str_1", "str_3")));
+    }
+
+    @Test
+    public void select_from_foo_join_bar_on_str()
+    {
+        repo.addEntities(foo_3);
+
+        QueryBuilder query =
+                select(attr(foo_int), attr(bar_int))
+                        .from(foo)
+                        .join(JoinBuilder.type(bar)
+                                .on(pred(clauseAttr(foo_str), eq(), clauseAttr(bar_str))));
+
+        assertThat(
+                fetch(query),
+                contains(contains(43, 44), contains(57, 44)));
     }
 
     @Test
@@ -248,7 +269,7 @@ public class QueryTest
 
         assertThat(
                 fetch(query),
-                contains(contains("foo_str_1", "bar_str_3")));
+                contains(contains("str_1", "str_3")));
     }
 
     private List<List<Object>> fetch(QueryBuilder query)
