@@ -50,29 +50,36 @@ public class QueryTest
     }
 
     private final Attr foo_str = attr(Str, "foo_str");
+    private final Attr foo_cat = attr(Str, "foo_cat");
     private final Attr foo_int = attr(Int, "foo_int");
     private final EntityType foo = Entities.newEntityType(
-            "foo", foo_str, foo_int);
+            "foo", foo_str, foo_int, foo_cat);
     private final Entity foo_1 = newEntity(foo, "foo_1",
             strValue(foo_str, "str_1"), 
-            intValue(foo_int, 42));
+            intValue(foo_int, 42),
+            strValue(foo_cat, "cat_1"));
     private final Entity foo_2 = newEntity(foo, "foo_2",
             strValue(foo_str, "str_2"),
-            intValue(foo_int, 43));
+            intValue(foo_int, 43),
+            strValue(foo_cat, "cat_2"));
     private final Entity foo_3 = newEntity(foo, "foo_3",
             strValue(foo_str, "str_2"),
-            intValue(foo_int, 57));
+            intValue(foo_int, 57),
+            strValue(foo_cat, "cat_2"));
 
     private final Attr bar_int = attr(Int, "bar_int");
+    private final Attr bar_cat = attr(Str, "bar_cat");
     private final Attr bar_str = attr(Str, "bar_str");
     private final EntityType bar = Entities.newEntityType(
-            "bar", bar_int, bar_str);
+            "bar", bar_int, bar_str, bar_cat);
     private final Entity bar_1 = newEntity(bar, "bar_1", 
             strValue(bar_str, "str_2"),
-            intValue(bar_int, 44));
+            intValue(bar_int, 44),
+            strValue(bar_cat, "cat_1"));
     private final Entity bar_2 = newEntity(bar, "bar_2",
             strValue(bar_str, "str_3"),
-            intValue(bar_int, 42));
+            intValue(bar_int, 42),
+            strValue(bar_cat, "cat_2"));
 
     @Before
     public void setUp()
@@ -255,6 +262,25 @@ public class QueryTest
         assertThat(
                 fetch(query),
                 contains(contains(43, 44), contains(57, 44)));
+    }
+
+    @Test
+    public void select_from_foo_join_bar_on_str_group_by_sum()
+    {
+        repo.addEntities(foo_3);
+
+        QueryBuilder query =
+                select(attr(foo_str), sum(attr(foo_int)))
+                        .from(foo)
+                        .join(JoinBuilder.type(bar)
+                                .on(pred(clauseAttr(foo_cat), eq(), clauseAttr(bar_cat))))
+                        .groupBy(foo_str)
+                        .order(by(attr(foo_str), ASC));
+
+        assertThat(
+                fetch(query),
+                contains(contains("str_1", 42),
+                        contains("str_2", 43 + 57)));
     }
 
     @Test
