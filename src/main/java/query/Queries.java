@@ -3,18 +3,24 @@ package query;
 
 import io.vavr.collection.List;
 
+import static query.Entities.clauseAttr;
+
 public class Queries
 {
     public static QueryBuilder select(SelectTerm... terms) {
         return new QueryBuilder(List.of(terms));
     }
 
-    public static From type(EntityType et) {
-        return new From(et);
-    }
-
     public static PredicateBuilder pred(AttrClauseTerm l, Op op, ClauseTerm r) {
         return new PredicateBuilder(l, op, r);
+    }
+
+    public static PredicateBuilder pred(Attr l, Op op, ClauseTerm r) {
+        return new PredicateBuilder(clauseAttr(l), op, r);
+    }
+
+    public static PredicateBuilder pred(Attr l, Op op, Attr r) {
+        return new PredicateBuilder(clauseAttr(l), op, clauseAttr(r));
     }
 
     public static Op eq()

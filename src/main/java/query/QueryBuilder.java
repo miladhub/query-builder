@@ -2,6 +2,7 @@ package query;
 
 import io.vavr.collection.List;
 
+import static query.Entities.clauseAttr;
 import static query.Queries.pred;
 
 public class QueryBuilder
@@ -41,6 +42,12 @@ public class QueryBuilder
         return this;
     }
 
+    public QueryBuilder where(Attr l, Op o, ClauseTerm r)
+    {
+        this.where = List.of(pred(clauseAttr(l), o, r).build());
+        return this;
+    }
+
     public QueryBuilder where(AttrClauseTerm l, Op o, ClauseTerm r)
     {
         this.where = List.of(pred(l, o, r).build());
@@ -50,6 +57,12 @@ public class QueryBuilder
     public QueryBuilder and(AttrClauseTerm l, Op o, ClauseTerm r)
     {
         this.where = where.append(pred(l, o, r).build());
+        return this;
+    }
+
+    public QueryBuilder and(Attr l, Op o, ClauseTerm r)
+    {
+        this.where = where.append(pred(clauseAttr(l), o, r).build());
         return this;
     }
 
